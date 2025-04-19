@@ -74,3 +74,39 @@ export async function loginUser(input: unknown) {
   // Return the user ID or other relevant data
   return { id: foundUser.id, username: foundUser.username };
 }
+
+export async function getUserById(userId: number) {
+  const user = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      pronouns: users.pronouns,
+      bio: users.bio,
+      // Exclude sensitive information like password
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+    .execute();
+  if (!user.length) {
+    return null; // User not found
+  }
+  return user[0];
+}
+
+export async function getUserIdByUsername(username: string): Promise<number> {
+  // Query the database to find the user ID by username
+  const user = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.username, username))
+    .limit(1)
+    .execute();
+
+  if (user.length === 0) {
+    throw new Error(`User with username "${username}" not found.`);
+  }
+
+  return user[0].id;
+}

@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { ChatWrapper } from '@/components/ChatWrapper';
+import { requireAuth } from '@/lib/auth';
 
 export const Route = createFileRoute('/chat/')({
   component: Chat,
+  beforeLoad: requireAuth,
 });
 
 function Chat() {

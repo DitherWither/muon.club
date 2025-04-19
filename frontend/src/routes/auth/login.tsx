@@ -1,6 +1,6 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { env } from '@/env';
+import { loginToBackend } from '@/lib/auth';
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
@@ -22,31 +22,14 @@ function RouteComponent() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
     try {
-      const response = await fetch(`${env.VITE_BACKEND_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to log in');
-      }
-
-      setSuccess('Login successful!');
+      loginToBackend(formData.username, formData.password);
       navigate({ to: '/chat' });
-      setFormData({
-        username: '',
-        password: '',
-      });
     } catch (err: any) {
       setError(err.message);
     }
@@ -99,6 +82,14 @@ function RouteComponent() {
             Login
           </button>
         </form>
+        <div className="mt-4 text-center">
+          <p className="text-gray-600 dark:text-gray-300">
+            Don't have an account?{' '}
+            <Link to="/auth/register" className="text-blue-500 hover:underline">
+              Register
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

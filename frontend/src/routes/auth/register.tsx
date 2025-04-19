@@ -1,12 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { env } from '@/env';
+import { registerToBackend } from '@/lib/auth';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const navigate = useNavigate({ from: '/auth/register' });
   const [formData, setFormData] = useState({
     displayName: '',
     username: '',
@@ -40,29 +41,15 @@ function RouteComponent() {
     }
 
     try {
-      const response = await fetch(`${env.VITE_BACKEND_URL}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      registerToBackend({
+        username: formData.username,
+        password: formData.password,
+        displayName: formData.displayName,
+        email: formData.email,
+        pronouns: formData.pronouns,
+        bio: formData.bio,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to register user');
-      }
-
-      setSuccess('User registered successfully!');
-      setFormData({
-        displayName: '',
-        username: '',
-        password: '',
-        confirmPassword: '',
-        email: '',
-        pronouns: '',
-        bio: '',
-      });
+      navigate({ to: '/chat' });
     } catch (err: any) {
       setError(err.message);
     }
@@ -177,6 +164,14 @@ function RouteComponent() {
             Register
           </button>
         </form>
+        <div className="mt-4 text-center">
+          <p className="text-gray-600 dark:text-gray-300">
+            Already have an account?{' '}
+            <Link to="/auth/login" className="text-blue-500 hover:underline">
+              Login
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

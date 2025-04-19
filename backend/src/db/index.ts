@@ -1,5 +1,4 @@
 import { drizzle } from "drizzle-orm/mysql2";
+import { env } from "../env";
 
-console.log("Connecting to database at", process.env.DATABASE_URL);
-
-export const db = drizzle(process.env.DATABASE_URL!);
+export const db = drizzle(env.DATABASE_URL);

@@ -1,9 +1,10 @@
 import { createEnv } from '@t3-oss/env-core';
+import { type } from 'arktype';
 import { z } from 'zod';
 
 export const env = createEnv({
   server: {
-    SERVER_URL: z.string().url().optional(),
+    SERVER_URL: type('string.url | null'),
   },
 
   /**
@@ -13,8 +14,8 @@ export const env = createEnv({
   clientPrefix: 'VITE_',
 
   client: {
-    VITE_APP_TITLE: z.string().min(1).optional(),
-    VITE_BACKEND_URL: z.string().url().optional(),
+    VITE_BACKEND_URL: type('string.url'),
+    VITE_WEBSOCKET_URL: type('string.url'),
   },
 
   /**

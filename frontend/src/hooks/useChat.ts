@@ -11,10 +11,7 @@ export function useChat(userId: string) {
   const [messages, setMessages] = useState<Array<Message>>([]);
   const [newMessage, setNewMessage] = useState<string>('');
 
-  // Use the WebSocket URL from the environment variable
-  const websocketUrl = env.VITE_WEBSOCKET_URL;
-
-  const { sendMessage, readyState } = useWebSocket(`${websocketUrl}`, {
+  const { sendMessage, readyState } = useWebSocket(env.VITE_WEBSOCKET_URL, {
     onOpen: () => {
       console.log('WebSocket connection established');
     },

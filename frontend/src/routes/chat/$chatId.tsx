@@ -3,15 +3,17 @@ import { SendIcon } from 'lucide-react';
 import React from 'react';
 import { useChat } from '../../hooks/useChat'; // Import the custom hook
 import { ChatWrapper } from '@/components/ChatWrapper';
+import { requireAuth } from '@/lib/auth';
 
-export const Route = createFileRoute('/chat/$userId')({
+export const Route = createFileRoute('/chat/$chatId')({
   component: Chat,
+  beforeLoad: requireAuth,
 });
 
 function Chat() {
-  const { userId } = Route.useParams(); // Get the userId from the route params
+  const { chatId } = Route.useParams(); // Get the userId from the route params
   const { messages, newMessage, setNewMessage, handleAddMessage } =
-    useChat(userId); // Use the custom hook
+    useChat(chatId); // Use the custom hook
 
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -25,7 +27,7 @@ function Chat() {
   return (
     <ChatWrapper>
       <div className="h-full flex flex-col p-5 font-sans">
-        <h1 className="text-2xl font-bold mb-4">Chatting with {userId}</h1>
+        <h1 className="text-2xl font-bold mb-4">Chatting with {chatId}</h1>
         <div className="flex-grow w-full overflow-y-auto space-y-3 flex flex-col justify-end">
           {messages.map((message, index) => (
             <div
