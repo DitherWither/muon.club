@@ -97,6 +97,7 @@ export async function acceptMyFriendRequest(req: Request, res: Response) {
 
 export async function randomFriend(req: Request, res: Response) {
   const userId: number = res.locals.userId!;
+  const currentUser = await getUserById(userId);
 
   // Get the list of online users
   const onlineUsers = Array.from(socketsMap.keys());
@@ -109,6 +110,19 @@ export async function randomFriend(req: Request, res: Response) {
         myUserId: userId,
         friendId: randomUserId,
       });
+
+      const socket = socketsMap.get(randomUserId);
+      if (socket) {
+        socket.send(
+          JSON.stringify({
+            type: "friendRequestAccepted",
+            message: {
+              id: userId,
+              friend: currentUser,
+            },
+          })
+        );
+      }
       return res.status(200).json({ userId: randomUserId });
     }
   }
