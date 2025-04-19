@@ -1,26 +1,36 @@
-import { env } from '@/env';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
+import type { Message } from '@/lib/messages';
+import { env } from '@/env';
+import { createMessage, getMessages } from '@/lib/messages';
 
-interface Message {
-  text: string;
-  sender: 'me' | 'other';
-}
-
-export function useChat(userId: string) {
+export function useChat(userId: number) {
   const [messages, setMessages] = useState<Array<Message>>([]);
   const [newMessage, setNewMessage] = useState<string>('');
 
-  const { sendMessage, readyState } = useWebSocket(env.VITE_WEBSOCKET_URL, {
+  useEffect(() => {
+    getMessages(userId).then((history) => setMessages(history));
+  }, []);
+
+  const { sendJsonMessage, readyState } = useWebSocket(env.VITE_WEBSOCKET_URL, {
     onOpen: () => {
-      console.log('WebSocket connection established');
+      sendJsonMessage({
+        type: 'authenticate',
+        token: localStorage.getItem('token'),
+      });
     },
     onMessage: (event) => {
-      const message = JSON.parse(event.data);
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { text: message.text, sender: message.sender },
-      ]);
+      const message = JSON.parse(event.data) as {
+        type: 'message';
+        message: Message;
+      };
+      if (typeof message !== 'object') {
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (message.type === 'message') {
+        setMessages((prevMessages) => [...prevMessages, message.message]);
+      }
     },
     onError: (error) => {
       console.error('WebSocket error:', error);
@@ -28,18 +38,19 @@ export function useChat(userId: string) {
     shouldReconnect: (_) => true,
   });
 
-  const handleAddMessage = (e: React.FormEvent) => {
+  const handleAddMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      sendMessage(
-        JSON.stringify({
-          text: newMessage,
-          sender: 'me',
-        }),
-      );
+      const message = await createMessage(userId, newMessage);
       setMessages((prevMessages) => [
         ...prevMessages,
-        { text: newMessage, sender: 'me' },
+        {
+          id: message.id,
+          senderId: +localStorage.getItem('userId')!,
+          recipientId: userId,
+          content: newMessage,
+          createdAt: new Date().toString(),
+        },
       ]);
       setNewMessage('');
     }

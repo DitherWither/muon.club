@@ -13,7 +13,7 @@ export const Route = createFileRoute('/chat/$chatId')({
 function Chat() {
   const { chatId } = Route.useParams(); // Get the userId from the route params
   const { messages, newMessage, setNewMessage, handleAddMessage } =
-    useChat(chatId); // Use the custom hook
+    useChat(+chatId); // Use the custom hook
 
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -27,21 +27,20 @@ function Chat() {
   return (
     <ChatWrapper>
       <div className="h-full flex flex-col p-5 font-sans">
-        <h1 className="text-2xl font-bold mb-4">Chatting with {chatId}</h1>
         <div className="flex-grow w-full overflow-y-auto space-y-3 flex flex-col justify-end">
           {messages.map((message, index) => (
             <div
-              className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.senderId === +localStorage.getItem('userId')! ? 'justify-end' : 'justify-start'}`}
               key={index}
             >
               <div
                 className={`max-w-xs px-4 py-2 rounded-lg ${
-                  message.sender === 'me'
+                  message.senderId === +localStorage.getItem('userId')!
                     ? 'bg-gray-300 dark:bg-gray-800 self-end text-right'
                     : 'bg-pink-300 dark:bg-pink-800 self-start text-left'
                 }`}
               >
-                {message.text}
+                {message.content}
               </div>
             </div>
           ))}

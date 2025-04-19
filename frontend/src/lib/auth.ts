@@ -73,6 +73,7 @@ export async function loginToBackend(
 
   // Store the token in local storage
   localStorage.setItem('token', data.token);
+  localStorage.setItem('userId', data.user.id);
 
   return data.token; // Return the JWT token
 }
