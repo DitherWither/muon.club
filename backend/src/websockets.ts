@@ -14,6 +14,7 @@ export function createWebSocketServer(server: http.Server) {
       console.error(error);
     });
     let userId: number | undefined;
+    console.log("WebSocket connection established");
 
     ws.on("message", (message) => {
       const messageData = JSON.parse(message.toString());

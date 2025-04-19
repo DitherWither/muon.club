@@ -1,5 +1,12 @@
-import { addFriend, getFriendsList, acceptFriendRequest } from "../db/friends";
+import {
+  addFriend,
+  getFriendsList,
+  acceptFriendRequest,
+  forceAddFriend,
+} from "../db/friends";
 import { Request, Response } from "express";
+import { socketsMap } from "../websockets";
+import { getUserById } from "../db/users";
 
 export async function getMyFriendsList(req: Request, res: Response) {
   const userId: number = res.locals.userId!;
@@ -12,6 +19,7 @@ export async function getMyFriendsList(req: Request, res: Response) {
 
 export async function makeFriendRequest(req: Request, res: Response) {
   const userId: number = res.locals.userId!;
+  const currentUser = await getUserById(userId);
 
   // Extract the other user's ID from the request body
   const { username } = req.body;
@@ -20,7 +28,21 @@ export async function makeFriendRequest(req: Request, res: Response) {
   }
 
   // Create a DM between the two users
-  const dm = await addFriend({ myUserId: userId, username, isRequest: true });
+  const dm = await addFriend({ myUserId: userId, username });
+
+  // Send the message to the socket if it exists
+  const socket = socketsMap.get(dm.friendId);
+  if (socket) {
+    socket.send(
+      JSON.stringify({
+        type: "friendRequest",
+        message: {
+          id: userId,
+          username: currentUser?.username,
+        },
+      })
+    );
+  }
 
   res.status(201).json({ message: "Direct message created successfully", dm });
 }
@@ -35,11 +57,59 @@ export async function acceptMyFriendRequest(req: Request, res: Response) {
     return res.status(400).json({ error: "Missing friendId in request body" });
   }
 
+  const currentUser = await getUserById(userId);
+
   // Create a DM between the two users
   const dm = await acceptFriendRequest({
     myUserId: userId,
     friendId: Number(friendId),
   });
 
+  // Send the message to the socket if it exists
+  const socket = socketsMap.get(friendId);
+  if (socket) {
+    socket.send(
+      JSON.stringify({
+        type: "friendRequestAccepted",
+        message: {
+          id: userId,
+          friend: currentUser,
+        },
+      })
+    );
+  }
+
+  const otherSocket = socketsMap.get(userId);
+  if (otherSocket) {
+    otherSocket.send(
+      JSON.stringify({
+        type: "friendRequestAccepted",
+        message: {
+          id: friendId,
+          friend: dm.friend[0],
+        },
+      })
+    );
+  }
+
   res.status(201).json({ message: "Friend request accepted successfully", dm });
+}
+
+export async function randomFriend(req: Request, res: Response) {
+  const userId: number = res.locals.userId!;
+
+  // Get the list of online users
+  const onlineUsers = Array.from(socketsMap.keys());
+
+  while (true) {
+    const randomUserId =
+      onlineUsers[Math.floor(Math.random() * onlineUsers.length)];
+    if (randomUserId !== userId) {
+      await forceAddFriend({
+        myUserId: userId,
+        friendId: randomUserId,
+      });
+      return res.status(200).json({ userId: randomUserId });
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Header from './Header';
@@ -7,19 +7,24 @@ import {
   acceptFriendRequest,
   getFriendsList,
   makeFriendRequest,
+  randomFriend,
 } from '@/lib/friends';
+import { useFriendsStore } from '@/hooks/useFriendsStore';
 
 export const ChatWrapper: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const [newUserId, setNewUserId] = useState('');
   const queryClient = useQueryClient();
+  const setFriendsList = useFriendsStore((state) => state.setFriendsList);
+  const friends = useFriendsStore((state) => state.friends);
+  const friendRequests = useFriendsStore((state) => state.friendRequests);
 
-  // Fetch chats using react-query
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['chats'],
-    queryFn: getFriendsList,
-  });
+  useEffect(() => {
+    (async () => {
+      setFriendsList(await getFriendsList());
+    })();
+  }, []);
 
   const {
     data: user,
@@ -33,6 +38,13 @@ export const ChatWrapper: React.FC<{
   // Mutation to add a user to a chat
   const makeFriendRequestMutation = useMutation({
     mutationFn: makeFriendRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
+    },
+  });
+
+  const randomFriendMutation = useMutation({
+    mutationFn: randomFriend,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
     },
@@ -56,14 +68,6 @@ export const ChatWrapper: React.FC<{
   const handleLogout = () => {
     logoutFromBackend(queryClient);
   };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error || !data) {
-    return <div>Error loading chats</div>;
-  }
 
   return (
     <div className="h-screen flex flex-col">
@@ -120,16 +124,16 @@ export const ChatWrapper: React.FC<{
             Users
           </h2>
           <ul className="space-y-2">
-            {data.friends.length === 0 && (
+            {friends.length === 0 && (
               <li className="text-gray-500 dark:text-gray-400">
                 No chats available.
               </li>
             )}
-            {data.friends.map((friend) => (
+            {friends.map((friend) => (
               <li key={friend.id} className="flex justify-between gap-3">
                 <Link
                   to="/chat/$chatId"
-                  params={{ chatId: friend.id.toString() }}
+                  params={{ chatId: `${friend.id}` }}
                   className="text-gray-900 dark:text-white hover:underline"
                 >
                   {friend.displayName || friend.username}
@@ -142,29 +146,25 @@ export const ChatWrapper: React.FC<{
             Friend Requests
           </h2>
           <ul className="space-y-2">
-            {data.friendRequests.length === 0 && (
+            {friendRequests.length === 0 && (
               <li className="text-gray-500 dark:text-gray-400">
                 No friend requests.
               </li>
             )}
-            {data.friendRequests.map((friendRequest) => (
+            {friendRequests.map((friendRequest) => (
               <li key={friendRequest.id}>
                 <p className="text-gray-900 dark:text-white">
-                  {friendRequest.displayName || friendRequest.username}
-                  {friendRequest.pronouns && (
-                    <span> ({friendRequest.pronouns})</span>
-                  )}
+                  {friendRequest.username}
                   <br />
                   <span className="text-gray-500 dark:text-gray-400">
                     Requested you to chat
                     <br />
-                    {friendRequest.bio}
-                    <br />
                     <button
                       className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
-                      onClick={() =>
-                        acceptFriendRequestMutation.mutate(friendRequest.id)
-                      }
+                      onClick={() => {
+                        console.log(friendRequest);
+                        acceptFriendRequestMutation.mutate(friendRequest.id);
+                      }}
                       disabled={makeFriendRequestMutation.isPending}
                     >
                       {makeFriendRequestMutation.isPending
@@ -184,6 +184,7 @@ export const ChatWrapper: React.FC<{
               value={newUserId}
               onChange={(e) => setNewUserId(e.target.value)}
               placeholder="Enter user ID"
+              autoComplete="off"
               className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
             <button
@@ -192,6 +193,15 @@ export const ChatWrapper: React.FC<{
               disabled={makeFriendRequestMutation.isPending}
             >
               {makeFriendRequestMutation.isPending ? 'Adding...' : 'Add User'}
+            </button>
+            <button
+              onClick={() => randomFriendMutation.mutate()}
+              className="mt-2 w-full px-3 py-2 rounded bg-blue-500 text-white hover:bg-blue-600"
+              disabled={randomFriendMutation.isPending}
+            >
+              {randomFriendMutation.isPending
+                ? 'Adding...'
+                : 'Add random friend'}
             </button>
           </div>
 

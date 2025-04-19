@@ -37,6 +37,7 @@ export async function makeFriendRequest(username: string) {
 }
 
 export async function acceptFriendRequest(friendId: number) {
+  console.log(friendId);
   const response = await fetchBackendData<{
     message: string;
     dm: { id: string; name: string; isDm: boolean };
@@ -47,6 +48,23 @@ export async function acceptFriendRequest(friendId: number) {
     },
     body: JSON.stringify({ friendId }),
   });
+
+  return response.dm;
+}
+
+export async function randomFriend() {
+  const response = await fetchBackendData<{
+    message: string;
+    dm: { id: string; name: string; isDm: boolean };
+  }>('/api/v1/friends/random', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  // refresh page
+  window.location.reload();
 
   return response.dm;
 }

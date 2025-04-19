@@ -3,6 +3,7 @@ import {
   getMyFriendsList,
   makeFriendRequest,
   acceptMyFriendRequest,
+  randomFriend,
 } from "../controllers/friends";
 import { authenticateToken } from "../middleware/auth";
 
@@ -19,6 +20,10 @@ router.post("/", async (req, res) => {
 
 router.post("/accept", async (req, res) => {
   acceptMyFriendRequest(req, res);
+});
+
+router.post("/random", async (req, res) => {
+  randomFriend(req, res);
 });
 
 export default router;

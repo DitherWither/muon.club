@@ -11,11 +11,9 @@ import { getUserIdByUsername } from "./users";
 export async function addFriend({
   username,
   myUserId,
-  isRequest,
 }: {
   username: string;
   myUserId: number;
-  isRequest: boolean;
 }) {
   // Get the user ID of the recipient by username
   const recipientUserId = await getUserIdByUsername(username);
@@ -43,7 +41,39 @@ export async function addFriend({
     .values({
       userId: myUserId,
       friendId: recipientUserId,
-      isRequest,
+      isRequest: true,
+    })
+    .$returningId();
+
+  return { newFriendRequest, friendId: recipientUserId };
+}
+
+export async function forceAddFriend({
+  myUserId,
+  friendId,
+}: {
+  myUserId: number;
+  friendId: number;
+}) {
+  // Check if the friend request already exists
+  const existingRequest = await db
+    .select()
+    .from(friends)
+    .where(and(eq(friends.userId, myUserId), eq(friends.friendId, friendId)))
+    .limit(1)
+    .execute();
+
+  if (existingRequest.length > 0) {
+    return existingRequest[0]; // Return the existing friend request if found
+  }
+
+  // Insert the new friend request into the database
+  const [newFriendRequest] = await db
+    .insert(friends)
+    .values({
+      userId: myUserId,
+      friendId: friendId,
+      isRequest: false,
     })
     .$returningId();
 
@@ -80,7 +110,14 @@ export async function acceptFriendRequest({
     .set({ isRequest: false })
     .where(eq(friends.id, existingRequest[0].id));
 
-  return existingRequest[0];
+  // Get the user data
+  const friend = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, friendId))
+    .limit(1);
+
+  return { ...existingRequest[0], friend };
 }
 
 export async function getFriends({ userId }: { userId: number }) {
