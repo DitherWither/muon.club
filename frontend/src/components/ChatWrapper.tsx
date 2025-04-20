@@ -324,10 +324,11 @@ export const ChatWrapper: React.FC<{
           <div className="mt-4">
             <input
               type="text"
+              name="friend"
               value={newUserId}
               onChange={(e) => setNewUserId(e.target.value)}
-              placeholder="Enter user ID"
-              autoComplete="off"
+              placeholder="Add a user by their username"
+              autoComplete="false"
               className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
             <button
@@ -335,7 +336,9 @@ export const ChatWrapper: React.FC<{
               className="mt-2 w-full px-3 py-2 rounded bg-blue-500 text-white hover:bg-blue-600"
               disabled={makeFriendRequestMutation.isPending}
             >
-              {makeFriendRequestMutation.isPending ? 'Adding...' : 'Add User'}
+              {makeFriendRequestMutation.isPending
+                ? 'Sending...'
+                : 'Send Friend Request'}
             </button>
             <button
               onClick={() => randomFriendMutation.mutate()}
