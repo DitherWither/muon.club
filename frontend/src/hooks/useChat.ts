@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Friend } from './useFriendsStore';
 import type { Message } from '@/lib/messages';
 import { env } from '@/env';
 import { createMessage, getMessages } from '@/lib/messages';
