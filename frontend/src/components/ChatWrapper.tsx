@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Dialog } from 'radix-ui';
 import Header from './Header';
-import { getCurrentUser, logoutFromBackend } from '@/lib/auth';
+import { getCurrentUser, logoutFromBackend, updateUser } from '@/lib/auth';
 import {
   acceptFriendRequest,
   getFriendsList,
@@ -15,6 +16,7 @@ export const ChatWrapper: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const [newUserId, setNewUserId] = useState('');
+  const [showDialog, setShowDialog] = useState(false);
   const queryClient = useQueryClient();
   const { data, error, isLoading } = useQuery({
     queryKey: ['friends'],
@@ -105,6 +107,117 @@ export const ChatWrapper: React.FC<{
                         </p>
                       )}
                     </div>
+                    <Dialog.Root open={showDialog} onOpenChange={setShowDialog}>
+                      <Dialog.Trigger className="text-gray-500 dark:text-gray-400 hover:underline">
+                        Edit Profile
+                      </Dialog.Trigger>
+                      <Dialog.Portal>
+                        <Dialog.Content className="fixed inset-0 z-10 rounded-lg bg-white p-4 shadow-lg dark:border-gray-600 dark:bg-gray-800 flex justify-center items-center">
+                          <div className="w-[80ch]">
+                            <Dialog.Title className="mb-4 text-lg font-bold">
+                              Edit Profile
+                            </Dialog.Title>
+                            <Dialog.Description className="mb-4">
+                              Update your profile details here.
+                            </Dialog.Description>
+                            <form
+                              className="space-y-4"
+                              onSubmit={async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData(
+                                  e.target as HTMLFormElement,
+                                );
+                                const displayName = formData.get(
+                                  'displayName',
+                                ) as string;
+
+                                const pronouns = formData.get(
+                                  'pronouns',
+                                ) as string;
+                                const bio = formData.get('bio') as string;
+                                await updateUser({
+                                  displayName:
+                                    displayName.length > 0
+                                      ? displayName
+                                      : undefined,
+                                  pronouns:
+                                    pronouns.length > 0 ? pronouns : undefined,
+                                  bio: bio.length > 0 ? bio : undefined,
+                                });
+                                queryClient.invalidateQueries({
+                                  queryKey: ['currentUser'],
+                                });
+                                setShowDialog(false);
+                              }}
+                            >
+                              <div>
+                                <label
+                                  htmlFor="displayName"
+                                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                                >
+                                  Display Name
+                                </label>
+                                <input
+                                  type="text"
+                                  name="displayName"
+                                  id="displayName"
+                                  defaultValue={user.displayName}
+                                  className="w-full rounded border border-gray-300 bg-white p-2 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                  placeholder="Display Name"
+                                />
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor="pronouns"
+                                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                                >
+                                  Pronouns
+                                </label>
+                                <input
+                                  type="text"
+                                  name="pronouns"
+                                  id="pronouns"
+                                  defaultValue={user.pronouns}
+                                  className="w-full rounded border border-gray-300 bg-white p-2 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                  placeholder="Pronouns"
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor="bio"
+                                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                                >
+                                  Bio
+                                </label>
+                                <textarea
+                                  name="bio"
+                                  id="bio"
+                                  defaultValue={user.bio}
+                                  className="w-full rounded border border-gray-300 bg-white p-2 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                  placeholder="Bio"
+                                />
+                              </div>
+                              <div className="flex justify-end">
+                                <button
+                                  type="button"
+                                  className="rounded bg-red-500 px-3 py-2 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                  onClick={() => setShowDialog(false)}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="ml-3 rounded bg-blue-500 px-3 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </Dialog.Content>
+                      </Dialog.Portal>
+                    </Dialog.Root>
                   </div>
                 </div>
                 {user.bio && (

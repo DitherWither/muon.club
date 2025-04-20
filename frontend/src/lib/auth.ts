@@ -161,3 +161,21 @@ export async function getCurrentUser(): Promise<User> {
 export function isAuthenticated(): boolean {
   return localStorage.getItem('token') !== null;
 }
+
+type UpdateUser = {
+  displayName?: string;
+  pronouns?: string;
+  bio?: string;
+};
+
+export async function updateUser(user: UpdateUser) {
+  const response = await fetchBackendData<User>('/api/v1/auth/me', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(user),
+  });
+
+  return response;
+}

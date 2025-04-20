@@ -79,6 +79,7 @@ export async function getUserById(userId: number) {
   const user = await db
     .select({
       id: users.id,
+      displayName: users.displayName,
       username: users.username,
       email: users.email,
       pronouns: users.pronouns,
@@ -109,4 +110,28 @@ export async function getUserIdByUsername(username: string): Promise<number> {
   }
 
   return user[0].id;
+}
+
+const updateUserInput = type({
+  displayName: "1 < string < 255 | undefined",
+  pronouns: "string < 50 | undefined",
+  bio: "string < 2048 | undefined",
+});
+
+export async function updateUser(userId: number, input: unknown) {
+  // Validate the input using arktype
+  const validatedInput = updateUserInput.assert(input);
+
+  // Update the user in the database
+  await db
+    .update(users)
+    .set({
+      displayName: validatedInput.displayName,
+      pronouns: validatedInput.pronouns,
+      bio: validatedInput.bio,
+    })
+    .where(eq(users.id, userId))
+    .execute();
+
+  return userId;
 }
