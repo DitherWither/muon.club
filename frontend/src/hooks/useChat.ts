@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
-import { useFriendsStore } from './useFriendsStore';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Friend } from './useFriendsStore';
 import type { Message } from '@/lib/messages';
 import { env } from '@/env';
@@ -9,11 +9,7 @@ import { createMessage, getMessages } from '@/lib/messages';
 export function useChat(userId: number) {
   const [messages, setMessages] = useState<Array<Message>>([]);
   const [newMessage, setNewMessage] = useState<string>('');
-  const addFriend = useFriendsStore((state) => state.addFriend);
-  const addFriendRequest = useFriendsStore((state) => state.addFriendRequest);
-  const removeFriendRequest = useFriendsStore(
-    (state) => state.removeFriendRequest,
-  );
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (userId === -1) {
@@ -48,6 +44,12 @@ export function useChat(userId: number) {
               id: number;
               friend: Friend;
             };
+          }
+        | {
+            type: 'friendDeleted';
+            message: {
+              id: number;
+            };
           };
 
       if (message.type === 'message') {
@@ -56,12 +58,12 @@ export function useChat(userId: number) {
         }
         setMessages((prevMessages) => [...prevMessages, message.message]);
       }
-      if (message.type === 'friendRequest') {
-        addFriendRequest(message.message);
-      }
-      if (message.type === 'friendRequestAccepted') {
-        removeFriendRequest(message.message.id);
-        addFriend(message.message.friend);
+      if (
+        message.type === 'friendRequest' ||
+        message.type === 'friendDeleted' ||
+        message.type === 'friendRequestAccepted'
+      ) {
+        queryClient.invalidateQueries({ queryKey: ['friends'] }); // Refresh the chats list
       }
     },
     onError: (error) => {

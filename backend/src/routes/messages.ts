@@ -6,11 +6,21 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get("/:otherUserId", (req, res) => {
-  getMessages(req, res);
+  try {
+    getMessages(req, res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/:otherUserId", (req, res) => {
-  createMessage(req, res);
+  try {
+    createMessage(req, res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

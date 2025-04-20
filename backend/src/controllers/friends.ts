@@ -3,6 +3,7 @@ import {
   getFriendsList,
   acceptFriendRequest,
   forceAddFriend,
+  deleteFriend,
 } from "../db/friends";
 import { Request, Response } from "express";
 import { socketsMap } from "../websockets";
@@ -126,4 +127,47 @@ export async function randomFriend(req: Request, res: Response) {
       return res.status(200).json({ userId: randomUserId });
     }
   }
+}
+
+export async function removeFriend(req: Request, res: Response) {
+  const userId: number = res.locals.userId!;
+
+  // Get the user id from path params
+  const friendId = +req.params.friendId;
+  if (!friendId || isNaN(friendId)) {
+    return res.status(400).json({ error: "Missing friendId in request body" });
+  }
+
+  try {
+    deleteFriend({ userId, friendId });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+
+  const socket = socketsMap.get(friendId);
+  if (socket) {
+    socket.send(
+      JSON.stringify({
+        type: "friendDeleted",
+        message: {
+          id: userId,
+        },
+      })
+    );
+  }
+
+  const otherSocket = socketsMap.get(userId);
+  if (otherSocket) {
+    otherSocket.send(
+      JSON.stringify({
+        type: "friendDeleted",
+        message: {
+          id: friendId,
+        },
+      })
+    );
+  }
+
+  res.status(201).json({ message: "Friend request deleted successfully" });
 }

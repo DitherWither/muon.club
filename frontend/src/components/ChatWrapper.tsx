@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Header from './Header';
@@ -8,23 +8,18 @@ import {
   getFriendsList,
   makeFriendRequest,
   randomFriend,
+  removeFriend,
 } from '@/lib/friends';
-import { useFriendsStore } from '@/hooks/useFriendsStore';
 
 export const ChatWrapper: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const [newUserId, setNewUserId] = useState('');
   const queryClient = useQueryClient();
-  const setFriendsList = useFriendsStore((state) => state.setFriendsList);
-  const friends = useFriendsStore((state) => state.friends);
-  const friendRequests = useFriendsStore((state) => state.friendRequests);
-
-  useEffect(() => {
-    (async () => {
-      setFriendsList(await getFriendsList());
-    })();
-  }, []);
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['friends'],
+    queryFn: getFriendsList,
+  });
 
   const {
     data: user,
@@ -45,6 +40,14 @@ export const ChatWrapper: React.FC<{
 
   const randomFriendMutation = useMutation({
     mutationFn: randomFriend,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
+    },
+  });
+
+  // Mutation to remove a friend
+  const removeFriendMutation = useMutation({
+    mutationFn: removeFriend,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
     },
@@ -124,57 +127,84 @@ export const ChatWrapper: React.FC<{
             Users
           </h2>
           <ul className="space-y-2">
-            {friends.length === 0 && (
+            {isLoading && <li>Loading...</li>}
+            {error && <li>Error: {error.message}</li>}
+            {data && data.friends.length === 0 && (
               <li className="text-gray-500 dark:text-gray-400">
                 No chats available.
               </li>
             )}
-            {friends.map((friend) => (
-              <li key={friend.id} className="flex justify-between gap-3">
-                <Link
-                  to="/chat/$chatId"
-                  params={{ chatId: `${friend.id}` }}
-                  className="text-gray-900 dark:text-white hover:underline"
-                >
-                  {friend.displayName || friend.username}
-                  {friend.pronouns && <span> ({friend.pronouns})</span>}
-                </Link>
-              </li>
-            ))}
+            {data &&
+              data.friends.map((friend) => (
+                <li key={friend.id} className="flex justify-between gap-3">
+                  <Link
+                    to="/chat/$chatId"
+                    params={{ chatId: `${friend.id}` }}
+                    className="text-gray-900 dark:text-white hover:underline"
+                  >
+                    {friend.displayName || friend.username}
+                    {friend.pronouns && <span> ({friend.pronouns})</span>}
+                  </Link>
+
+                  <button
+                    className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+                    onClick={() => {
+                      removeFriendMutation.mutate(friend.id);
+                    }}
+                    disabled={removeFriendMutation.isPending}
+                  >
+                    {removeFriendMutation.isPending ? 'Deleting...' : 'Delete'}
+                  </button>
+                </li>
+              ))}
           </ul>
           <h2 className="text-lg font-bold mt-8 mb-4 text-gray-900 dark:text-gray-100">
             Friend Requests
           </h2>
           <ul className="space-y-2">
-            {friendRequests.length === 0 && (
+            {isLoading && <li>Loading...</li>}
+            {error && <li>Error: {error.message}</li>}
+            {data && data.friendRequests.length === 0 && (
               <li className="text-gray-500 dark:text-gray-400">
                 No friend requests.
               </li>
             )}
-            {friendRequests.map((friendRequest) => (
-              <li key={friendRequest.id}>
-                <p className="text-gray-900 dark:text-white">
-                  {friendRequest.username}
-                  <br />
-                  <span className="text-gray-500 dark:text-gray-400">
-                    Requested you to chat
+            {data &&
+              data.friendRequests.map((friendRequest) => (
+                <li key={friendRequest.id}>
+                  <p className="text-gray-900 dark:text-white">
+                    {friendRequest.username}
                     <br />
-                    <button
-                      className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
-                      onClick={() => {
-                        console.log(friendRequest);
-                        acceptFriendRequestMutation.mutate(friendRequest.id);
-                      }}
-                      disabled={makeFriendRequestMutation.isPending}
-                    >
-                      {makeFriendRequestMutation.isPending
-                        ? 'Accepting...'
-                        : 'Accept'}
-                    </button>
-                  </span>
-                </p>
-              </li>
-            ))}
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Requested you to chat
+                      <br />
+                      <button
+                        className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
+                        onClick={() => {
+                          console.log(friendRequest);
+                          acceptFriendRequestMutation.mutate(friendRequest.id);
+                        }}
+                        disabled={makeFriendRequestMutation.isPending}
+                      >
+                        {makeFriendRequestMutation.isPending
+                          ? 'Accepting...'
+                          : 'Accept'}
+                      </button>
+                      <button
+                        className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+                        onClick={() => {
+                          removeFriendMutation.mutate(friendRequest.id);
+                        }}
+                        disabled={removeFriendMutation.isPending}
+                      >
+                        {removeFriendMutation.isPending
+                          ? 'Deleting...'
+                          : 'Delete'}
+                      </button>
+                    </span>
+                  </p>
+                </li>
+              ))}
           </ul>
 
           {/* Add User Input */}

@@ -68,3 +68,17 @@ export async function randomFriend() {
 
   return response.dm;
 }
+
+export async function removeFriend(friendId: number) {
+  const response = await fetchBackendData<{
+    message: string;
+    dm: { id: string; name: string; isDm: boolean };
+  }>(`/api/v1/friends/${friendId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  return response;
+}

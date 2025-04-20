@@ -169,3 +169,22 @@ export async function getFriendsList({ userId }: { userId: number }) {
   const friendRequests = await getFriendRequests(userId);
   return { friends, friendRequests };
 }
+
+export async function deleteFriend({
+  userId,
+  friendId,
+}: {
+  userId: number;
+  friendId: number;
+}) {
+  // Update the friend request to indicate that it has been accepted
+  await db
+    .delete(friends)
+    .where(
+      or(
+        and(eq(friends.userId, userId), eq(friends.friendId, friendId)),
+        and(eq(friends.userId, friendId), eq(friends.friendId, userId))
+      )
+    )
+    .execute();
+}
