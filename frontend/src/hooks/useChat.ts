@@ -41,7 +41,6 @@ export function useChat(userId: number) {
             type: 'friendRequestAccepted';
             message: {
               id: number;
-              friend: Friend;
             };
           }
         | {
