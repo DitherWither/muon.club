@@ -34,14 +34,14 @@ export const ChatWrapper: React.FC<{
   const makeFriendRequestMutation = useMutation({
     mutationFn: makeFriendRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
+      queryClient.invalidateQueries({ queryKey: ['friends'] }); // Refresh the chats list
     },
   });
 
   const randomFriendMutation = useMutation({
     mutationFn: randomFriend,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
+      queryClient.invalidateQueries({ queryKey: ['friends'] }); // Refresh the chats list
     },
   });
 
@@ -49,7 +49,7 @@ export const ChatWrapper: React.FC<{
   const removeFriendMutation = useMutation({
     mutationFn: removeFriend,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
+      queryClient.invalidateQueries({ queryKey: ['friends'] }); // Refresh the chats list
     },
   });
 
@@ -57,7 +57,7 @@ export const ChatWrapper: React.FC<{
   const acceptFriendRequestMutation = useMutation({
     mutationFn: acceptFriendRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chats'] }); // Refresh the chats list
+      queryClient.invalidateQueries({ queryKey: ['friends'] }); // Refresh the chats list
     },
   });
 
